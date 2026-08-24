@@ -1,7 +1,20 @@
 import { useState } from "react";
 import "./App.css";
 
-type Phase = "lesson" | "test" | "memory";
+/* ============================================================
+   TYPES
+============================================================ */
+
+type GameMode =
+  | "menu"
+  | "step"
+  | "big-test"
+  | "advanced";
+
+type Phase =
+  | "lesson"
+  | "test"
+  | "memory";
 
 type Level = {
   title: string;
@@ -10,6 +23,19 @@ type Level = {
   solution: string;
   explanation: string;
 };
+
+type AdvancedLevel = {
+  title: string;
+  description: string;
+  codeAlreadyProvided: string;
+  targetCode: string;
+  fullExpectedCode: string;
+  explanation: string;
+};
+
+/* ============================================================
+   BASIC LEVELS
+============================================================ */
 
 const levels: Level[] = [
   {
@@ -56,7 +82,7 @@ const levels: Level[] = [
     title: "Level 3 — Checkout the Repository",
 
     description:
-      "The runner needs your repository's source code before it can build or test anything. Use the GitHub checkout action. Give the step a descriptive name so it is easy to identify in the Actions UI.",
+      "The runner needs your repository's source code before it can build or test anything. Use the GitHub checkout action and give the step a descriptive name.",
 
     lessonCode: `- name: Checkout
   uses: actions/checkout@v4`,
@@ -81,14 +107,14 @@ const levels: Level[] = [
   run: npm install`,
 
     explanation:
-      "The 'run' keyword executes a command on the runner. Giving the step a name makes the pipeline easier to understand when looking at the GitHub Actions interface.",
+      "The 'run' keyword executes a command on the runner. Giving the step a name makes the pipeline easier to understand.",
   },
 
   {
     title: "Level 5 — Build the Application",
 
     description:
-      "Now build your application using the build script from package.json. Again, give the step a descriptive name.",
+      "Now build your application using the build script from package.json.",
 
     lessonCode: `- name: Build application
   run: npm run build`,
@@ -104,7 +130,7 @@ const levels: Level[] = [
     title: "Level 6 — Run Tests",
 
     description:
-      "A CI pipeline should test the application before it is deployed. Add a named test step.",
+      "A CI pipeline should test the application before it is deployed.",
 
     lessonCode: `- name: Run tests
   run: npm test`,
@@ -154,98 +180,571 @@ const levels: Level[] = [
 ];
 
 /* ============================================================
-   PIPELINE GENERATION
+   ADVANCED LEVELS
 
-   Generates exactly what the player has learned.
+   The foundational pipeline is already present.
 
-   completedLevels = 2:
-   Level 1 + Level 2
-
-   completedLevels = 4:
-   Level 1 + Level 2 + Level 3 + Level 4
-
-   IMPORTANT:
-   Checkout does NOT appear until Level 3 has
-   actually been completed.
+   The player only has to add the new thing being learned.
 ============================================================ */
 
-function getPipelineForCompletedLevels(
-  completedLevels: number
-): string {
-  let pipeline = "";
+const advancedLevels: AdvancedLevel[] = [
+  {
+    title: "Advanced 1 — Setup .NET",
 
-  if (completedLevels >= 1) {
-    pipeline += `on:
+    description:
+      "Your API is written in .NET. Before restoring, building or testing it, the runner needs the correct .NET SDK.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4`,
+
+    targetCode: `      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}`,
+
+    explanation:
+      "actions/setup-dotnet installs and configures the requested .NET SDK. The 'with' section supplies configuration to the action. Here, the version comes from an environment variable.",
+  },
+
+  {
+    title: "Advanced 2 — Restore Dependencies",
+
+    description:
+      "Now that the .NET SDK is installed, restore the NuGet dependencies required by the project.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}`,
+
+    targetCode: `      - name: Restore dependencies
+        run: dotnet restore`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore`,
+
+    explanation:
+      "dotnet restore downloads the NuGet packages needed by the project. This is normally done before building.",
+  },
+
+  {
+    title: "Advanced 3 — Release Build",
+
+    description:
+      "Build the application using the Release configuration. '--no-restore' prevents GitHub Actions from restoring the dependencies again.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore`,
+
+    targetCode: `      - name: Build
+        run: dotnet build --configuration Release --no-restore`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore`,
+
+    explanation:
+      "The Release configuration creates an optimized production build. '--no-restore' tells dotnet build that dependency restoration has already happened.",
+  },
+
+  {
+    title: "Advanced 4 — Test the API",
+
+    description:
+      "After building, run the automated tests. '--no-build' prevents another unnecessary build.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore`,
+
+    targetCode: `      - name: Test
+        run: dotnet test --configuration Release --no-build`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build`,
+
+    explanation:
+      "dotnet test runs the project's automated tests. '--no-build' means the already-created build is reused.",
+  },
+
+  {
+    title: "Advanced 5 — Publish the API",
+
+    description:
+      "The application passed its tests. Now publish it into a folder called ./publish so it can later be deployed.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build`,
+
+    targetCode: `      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish`,
+
+    explanation:
+      "dotnet publish prepares the application for deployment. The --output argument specifies where the published files should be placed.",
+  },
+
+  {
+    title: "Advanced 6 — Upload an Artifact",
+
+    description:
+      "The build job needs to pass the published files to another job. Upload the ./publish folder as an artifact called 'api'.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish`,
+
+    targetCode: `      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    explanation:
+      "Artifacts allow one job to store files so another job can download them later. Here the published API is stored as an artifact named 'api'.",
+  },
+
+  {
+    title: "Advanced 7 — Connect the Deploy Job",
+
+    description:
+      "Create the deploy job. It must wait until the build job succeeds.",
+
+    codeAlreadyProvided: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    targetCode: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build`,
+
+    fullExpectedCode: `jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: \${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish
+        run: dotnet publish --configuration Release --no-build --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ./publish
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build`,
+
+    explanation:
+      "The deploy job is a separate job. 'needs: build' means it will only run after the build job has completed successfully.",
+  },
+
+  {
+    title: "Advanced 8 — Download the Artifact",
+
+    description:
+      "The deploy job runs on a different runner. Download the artifact created by the build job.",
+
+    codeAlreadyProvided: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:`,
+
+    targetCode: `      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    fullExpectedCode: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    explanation:
+      "download-artifact retrieves the files stored by upload-artifact. The name must match the artifact created by the build job.",
+  },
+
+  {
+    title: "Advanced 9 — Login to Azure",
+
+    description:
+      "Before deploying to Azure, GitHub Actions needs to authenticate with your Azure account. The credentials are stored securely as a GitHub secret.",
+
+    codeAlreadyProvided: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish`,
+
+    targetCode: `      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: \${{ secrets.AZURE_CREDENTIALS }}`,
+
+    fullExpectedCode: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: \${{ secrets.AZURE_CREDENTIALS }}`,
+
+    explanation:
+      "azure/login authenticates the workflow with Azure. The credentials come from GitHub Secrets, so you don't put the actual credentials directly into the YAML file.",
+  },
+
+  {
+    title: "Advanced 10 — Deploy to Azure App Service",
+
+    description:
+      "You've reached the deployment stage. Deploy the published API to an Azure App Service using the webapps-deploy action.",
+
+    codeAlreadyProvided: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: \${{ secrets.AZURE_CREDENTIALS }}`,
+
+    targetCode: `      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: \${{ env.AZURE_WEBAPP_NAME }}
+          package: ./publish`,
+
+    fullExpectedCode: `  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: ./publish
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: \${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: \${{ env.AZURE_WEBAPP_NAME }}
+          package: ./publish`,
+
+    explanation:
+      "azure/webapps-deploy deploys the published files to an Azure App Service. app-name identifies the Web App and package tells the action which files to deploy.",
+  },
+];
+
+/* ============================================================
+   BASIC PIPELINE
+============================================================ */
+
+function getBasicPipeline(): string {
+  return `on:
   push:
     branches:
-      - main`;
-  }
-
-  if (completedLevels >= 2) {
-    pipeline += `
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:`;
-  }
-
-  if (completedLevels >= 3) {
-    pipeline += `
+    steps:
       - name: Checkout
-        uses: actions/checkout@v4`;
-  }
+        uses: actions/checkout@v4
 
-  if (completedLevels >= 4) {
-    pipeline += `
       - name: Install dependencies
-        run: npm install`;
-  }
+        run: npm install
 
-  if (completedLevels >= 5) {
-    pipeline += `
       - name: Build application
-        run: npm run build`;
-  }
+        run: npm run build
 
-  if (completedLevels >= 6) {
-    pipeline += `
       - name: Run tests
-        run: npm test`;
-  }
-
-  if (completedLevels >= 7) {
-    pipeline += `
+        run: npm test
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    steps:`;
-  }
-
-  if (completedLevels >= 8) {
-    pipeline += `
+    steps:
       - name: Deploy application
         run: npm run deploy`;
-  }
-
-  return pipeline;
 }
 
 /* ============================================================
-   YAML STRUCTURAL NORMALIZER
-
-   We don't compare the raw strings.
-
-   This means harmless differences such as:
-
-   Windows line endings
-   Trailing spaces
-   Blank lines
-
-   won't cause a false failure.
-
-   The actual YAML hierarchy still matters.
+   YAML STRUCTURE CHECK
 ============================================================ */
 
 type ParsedLine = {
@@ -253,14 +752,21 @@ type ParsedLine = {
   content: string;
 };
 
-function parseYamlStructure(code: string): ParsedLine[] {
+function parseYamlStructure(
+  code: string
+): ParsedLine[] {
   return code
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .split("\n")
-    .filter((line) => line.trim() !== "")
+    .filter(
+      (line) => line.trim() !== ""
+    )
     .map((line) => ({
-      indent: line.length - line.trimStart().length,
+      indent:
+        line.length -
+        line.trimStart().length,
+
       content: line.trim(),
     }));
 }
@@ -269,77 +775,66 @@ function yamlMatches(
   userCode: string,
   expectedCode: string
 ): boolean {
-  const user = parseYamlStructure(userCode);
-  const expected = parseYamlStructure(expectedCode);
+  const user =
+    parseYamlStructure(userCode);
 
-  if (user.length !== expected.length) {
+  const expected =
+    parseYamlStructure(expectedCode);
+
+  if (
+    user.length !==
+    expected.length
+  ) {
     return false;
   }
 
-  for (let i = 0; i < expected.length; i++) {
-    /*
-     * The actual YAML content on this line must match.
-     */
-    if (user[i].content !== expected[i].content) {
+  for (
+    let i = 0;
+    i < expected.length;
+    i++
+  ) {
+    if (
+      user[i].content !==
+      expected[i].content
+    ) {
       return false;
     }
-
-    /*
-     * Compare the indentation RELATIONSHIP rather than
-     * requiring an exact number of spaces.
-     *
-     * Example:
-     *
-     * jobs:
-     *   build:
-     *
-     * and
-     *
-     * jobs:
-     *     build:
-     *
-     * both represent the same parent/child relationship.
-     */
 
     if (i === 0) {
       continue;
     }
 
-    const userPreviousIndent = user[i - 1].indent;
-    const expectedPreviousIndent = expected[i - 1].indent;
+    const userPrevious =
+      user[i - 1].indent;
 
-    const userIndentDifference =
-      user[i].indent - userPreviousIndent;
+    const expectedPrevious =
+      expected[i - 1].indent;
 
-    const expectedIndentDifference =
-      expected[i].indent - expectedPreviousIndent;
+    const userDifference =
+      user[i].indent -
+      userPrevious;
 
-    /*
-     * Same level.
-     */
+    const expectedDifference =
+      expected[i].indent -
+      expectedPrevious;
+
     if (
-      userIndentDifference === 0 &&
-      expectedIndentDifference !== 0
+      userDifference === 0 &&
+      expectedDifference !== 0
     ) {
       return false;
     }
 
-    /*
-     * User went deeper, expected didn't.
-     */
     if (
-      userIndentDifference > 0 &&
-      expectedIndentDifference <= 0
+      userDifference > 0 &&
+      expectedDifference <= 0
     ) {
       return false;
     }
 
-    /*
-     * User went back, expected didn't.
-     */
     if (
-      userIndentDifference < 0 &&
-      expectedIndentDifference >= 0
+      userDifference < 0 &&
+      expectedDifference >= 0
     ) {
       return false;
     }
@@ -353,23 +848,84 @@ function yamlMatches(
 ============================================================ */
 
 function App() {
-  const [currentLevel, setCurrentLevel] = useState(0);
+  const [mode, setMode] =
+    useState<GameMode>("menu");
+
+  const [currentLevel, setCurrentLevel] =
+    useState(0);
 
   const [phase, setPhase] =
     useState<Phase>("lesson");
 
-  const [code, setCode] = useState("");
+  const [code, setCode] =
+    useState("");
 
-  const [result, setResult] = useState<
-    "correct" | "wrong" | null
-  >(null);
+  const [result, setResult] =
+    useState<
+      "correct" | "wrong" | null
+    >(null);
 
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
-  const [completed, setCompleted] = useState(false);
+  const [completed, setCompleted] =
+    useState(false);
 
   /* ==========================================================
-     START LEVEL TEST
+     RESET GAME
+  ========================================================== */
+
+  function resetGame() {
+    setCurrentLevel(0);
+    setPhase("lesson");
+    setCode("");
+    setResult(null);
+    setErrorMessage("");
+    setCompleted(false);
+  }
+
+  /* ==========================================================
+     OPEN MENU
+  ========================================================== */
+
+  function openMenu() {
+    setMode("menu");
+    resetGame();
+  }
+
+  /* ==========================================================
+     START STEP MODE
+  ========================================================== */
+
+  function startStepMode() {
+    resetGame();
+    setMode("step");
+  }
+
+  /* ==========================================================
+     START BIG TEST
+  ========================================================== */
+
+  function startBigTest() {
+    resetGame();
+
+    setMode("big-test");
+
+    setPhase("test");
+  }
+
+  /* ==========================================================
+     START ADVANCED
+  ========================================================== */
+
+  function startAdvanced() {
+    resetGame();
+
+    setMode("advanced");
+  }
+
+  /* ==========================================================
+     START INDIVIDUAL BASIC TEST
   ========================================================== */
 
   function startLevelTest() {
@@ -380,55 +936,44 @@ function App() {
   }
 
   /* ==========================================================
-     START MEMORY TEST
+     NEXT BASIC LEVEL
   ========================================================== */
 
-  function startMemoryTest(completedLevels: number) {
-    setCurrentLevel(completedLevels);
-
-    setPhase("memory");
-
-    setCode("");
-
-    setResult(null);
-
-    setErrorMessage("");
-  }
-
-  /* ==========================================================
-     LEVEL COMPLETED
-  ========================================================== */
-
-  function levelCompleted() {
-    const completedLevels = currentLevel + 1;
-
-    /*
-     * Every two completed levels:
-     * start a memory test.
-     */
+  function nextBasicLevel() {
+    const completedLevels =
+      currentLevel + 1;
 
     if (
       completedLevels % 2 === 0 &&
-      completedLevels < levels.length
+      completedLevels <
+        levels.length
     ) {
-      startMemoryTest(completedLevels);
+      setCurrentLevel(
+        completedLevels
+      );
+
+      setPhase("memory");
+
+      setCode("");
+
+      setResult(null);
+
+      setErrorMessage("");
+
       return;
     }
 
-    /*
-     * All levels completed.
-     */
-
-    if (completedLevels >= levels.length) {
+    if (
+      completedLevels >=
+      levels.length
+    ) {
       setCompleted(true);
       return;
     }
 
-    /*
-     * Move to the next lesson.
-     */
-
-    setCurrentLevel(completedLevels);
+    setCurrentLevel(
+      completedLevels
+    );
 
     setPhase("lesson");
 
@@ -440,18 +985,52 @@ function App() {
   }
 
   /* ==========================================================
-     CHECK INDIVIDUAL LEVEL
+     CHECK BASIC LEVEL
   ========================================================== */
 
-  function checkLevelAnswer() {
-    const expected =
-      levels[currentLevel].solution;
+  function checkBasicLevel() {
+    if (
+      yamlMatches(
+        code,
+        levels[currentLevel]
+          .solution
+      )
+    ) {
+      setResult("correct");
 
-    if (yamlMatches(code, expected)) {
+      setTimeout(
+        nextBasicLevel,
+        700
+      );
+
+      return;
+    }
+
+    setResult("wrong");
+
+    setErrorMessage(
+      getBasicError(
+        code,
+        currentLevel
+      )
+    );
+  }
+
+  /* ==========================================================
+     BIG TEST
+  ========================================================== */
+
+  function checkBigTest() {
+    if (
+      yamlMatches(
+        code,
+        getBasicPipeline()
+      )
+    ) {
       setResult("correct");
 
       setTimeout(() => {
-        levelCompleted();
+        setCompleted(true);
       }, 700);
 
       return;
@@ -460,37 +1039,151 @@ function App() {
     setResult("wrong");
 
     setErrorMessage(
-      getLevelError(
-        code,
-        currentLevel
-      )
+      "Your complete pipeline doesn't match what you learned in the basic course."
     );
   }
 
   /* ==========================================================
-     CHECK MEMORY TEST
+     MEMORY TEST
   ========================================================== */
 
-  function checkMemoryAnswer() {
-    const completedLevels = currentLevel;
+  function getMemoryPipeline(
+    completedLevels: number
+  ) {
+    let pipeline = "";
 
+    if (completedLevels >= 1) {
+      pipeline += `on:
+  push:
+    branches:
+      - main`;
+    }
+
+    if (completedLevels >= 2) {
+      pipeline += `
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:`;
+    }
+
+    if (completedLevels >= 3) {
+      pipeline += `
+      - name: Checkout
+        uses: actions/checkout@v4`;
+    }
+
+    if (completedLevels >= 4) {
+      pipeline += `
+      - name: Install dependencies
+        run: npm install`;
+    }
+
+    if (completedLevels >= 5) {
+      pipeline += `
+      - name: Build application
+        run: npm run build`;
+    }
+
+    if (completedLevels >= 6) {
+      pipeline += `
+      - name: Run tests
+        run: npm test`;
+    }
+
+    if (completedLevels >= 7) {
+      pipeline += `
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:`;
+    }
+
+    if (completedLevels >= 8) {
+      pipeline += `
+      - name: Deploy application
+        run: npm run deploy`;
+    }
+
+    return pipeline;
+  }
+
+  function checkMemory() {
     const expected =
-      getPipelineForCompletedLevels(
-        completedLevels
+      getMemoryPipeline(
+        currentLevel
       );
 
-    if (yamlMatches(code, expected)) {
+    if (
+      yamlMatches(
+        code,
+        expected
+      )
+    ) {
       setResult("correct");
 
       setTimeout(() => {
-        const nextLevel = completedLevels;
-
-        if (nextLevel >= levels.length) {
+        if (
+          currentLevel >=
+          levels.length
+        ) {
           setCompleted(true);
           return;
         }
 
-        setCurrentLevel(nextLevel);
+        setCurrentLevel(
+          currentLevel
+        );
+
+        setPhase("lesson");
+
+        setCode("");
+
+        setResult(null);
+      }, 700);
+
+      return;
+    }
+
+    setResult("wrong");
+
+    setErrorMessage(
+      "Your pipeline doesn't contain everything you've learned so far."
+    );
+  }
+
+  /* ============================================================
+     ADVANCED TEST
+  ============================================================ */
+
+  function checkAdvanced() {
+    const level =
+      advancedLevels[
+        currentLevel
+      ];
+
+    if (
+      yamlMatches(
+        code,
+        level.fullExpectedCode
+      )
+    ) {
+      setResult("correct");
+
+      setTimeout(() => {
+        if (
+          currentLevel + 1 >=
+          advancedLevels.length
+        ) {
+          setCompleted(true);
+          return;
+        }
+
+        setCurrentLevel(
+          currentLevel + 1
+        );
 
         setPhase("lesson");
 
@@ -499,7 +1192,7 @@ function App() {
         setResult(null);
 
         setErrorMessage("");
-      }, 800);
+      }, 700);
 
       return;
     }
@@ -507,488 +1200,159 @@ function App() {
     setResult("wrong");
 
     setErrorMessage(
-      getMemoryError(
+      getAdvancedError(
         code,
-        completedLevels
+        level
       )
     );
   }
 
-  /* ==========================================================
-     INDIVIDUAL LEVEL ERROR
-  ========================================================== */
+  /* ============================================================
+     ADVANCED ERROR
+  ============================================================ */
 
-  function getLevelError(
+  function getAdvancedError(
     submitted: string,
-    levelIndex: number
+    level: AdvancedLevel
   ): string {
     const user =
-      parseYamlStructure(submitted);
+      parseYamlStructure(
+        submitted
+      );
 
-    if (user.length === 0) {
+    if (
+      user.length === 0
+    ) {
+      return "You didn't enter anything.";
+    }
+
+    const target =
+      parseYamlStructure(
+        level.targetCode
+      );
+
+    const missing =
+      target.find(
+        (line) =>
+          !user.some(
+            (userLine) =>
+              userLine.content ===
+              line.content
+          )
+      );
+
+    if (missing) {
+      return `You're missing this line: ${missing.content}`;
+    }
+
+    return "The new code is present, but its structure or indentation is incorrect.";
+  }
+
+  /* ============================================================
+     BASIC ERROR
+  ============================================================ */
+
+  function getBasicError(
+    submitted: string,
+    index: number
+  ): string {
+    const user =
+      parseYamlStructure(
+        submitted
+      );
+
+    if (
+      user.length === 0
+    ) {
       return "You didn't enter any YAML.";
     }
 
-    if (levelIndex === 0) {
-      if (
-        !user.some(
-          (x) => x.content === "on:"
-        )
-      ) {
-        return "You're missing 'on:'. This defines when the workflow starts.";
-      }
+    const expected =
+      parseYamlStructure(
+        levels[index]
+          .solution
+      );
 
-      if (
-        !user.some(
-          (x) => x.content === "push:"
-        )
-      ) {
-        return "You're missing 'push:'.";
-      }
+    const missing =
+      expected.find(
+        (line) =>
+          !user.some(
+            (userLine) =>
+              userLine.content ===
+              line.content
+          )
+      );
 
-      if (
-        !user.some(
-          (x) => x.content === "branches:"
-        )
-      ) {
-        return "You're missing 'branches:'.";
-      }
-
-      if (
-        !user.some(
-          (x) => x.content === "- main"
-        )
-      ) {
-        return "The workflow needs to trigger on the main branch.";
-      }
-
-      return "The YAML structure doesn't match the required structure.";
+    if (missing) {
+      return `You're missing: ${missing.content}`;
     }
 
-    if (levelIndex === 1) {
-      if (
-        !user.some(
-          (x) => x.content === "jobs:"
-        )
-      ) {
-        return "You're missing the 'jobs:' section.";
-      }
-
-      if (
-        !user.some(
-          (x) => x.content === "build:"
-        )
-      ) {
-        return "You need a job called 'build'.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "runs-on: ubuntu-latest"
-        )
-      ) {
-        return "The build job needs 'runs-on: ubuntu-latest'.";
-      }
-
-      if (
-        !user.some(
-          (x) => x.content === "steps:"
-        )
-      ) {
-        return "You're missing the 'steps:' section.";
-      }
-
-      return "The job structure or indentation is incorrect.";
-    }
-
-    if (levelIndex === 2) {
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "- name: Checkout"
-        )
-      ) {
-        return "You're missing '- name: Checkout'. Give the step a descriptive name.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "uses: actions/checkout@v4"
-        )
-      ) {
-        return "You're missing 'uses: actions/checkout@v4'.";
-      }
-
-      return "The Checkout step is present, but its structure or indentation is incorrect.";
-    }
-
-    if (levelIndex === 3) {
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "- name: Install dependencies"
-        )
-      ) {
-        return "You're missing the 'Install dependencies' step name.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "run: npm install"
-        )
-      ) {
-        return "You need to run 'npm install'.";
-      }
-
-      return "The dependency installation step is structured incorrectly.";
-    }
-
-    if (levelIndex === 4) {
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "- name: Build application"
-        )
-      ) {
-        return "You're missing the 'Build application' step name.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "run: npm run build"
-        )
-      ) {
-        return "You need to run 'npm run build'.";
-      }
-
-      return "The build step is structured incorrectly.";
-    }
-
-    if (levelIndex === 5) {
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "- name: Run tests"
-        )
-      ) {
-        return "You're missing the 'Run tests' step name.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "run: npm test"
-        )
-      ) {
-        return "You need to run 'npm test'.";
-      }
-
-      return "The test step is structured incorrectly.";
-    }
-
-    if (levelIndex === 6) {
-      if (
-        !user.some(
-          (x) =>
-            x.content === "deploy:"
-        )
-      ) {
-        return "You need to create the 'deploy' job.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content === "needs: build"
-        )
-      ) {
-        return "The deploy job needs 'needs: build'.";
-      }
-
-      return "The deploy job structure is incorrect.";
-    }
-
-    if (levelIndex === 7) {
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "- name: Deploy application"
-        )
-      ) {
-        return "You're missing the 'Deploy application' step name.";
-      }
-
-      if (
-        !user.some(
-          (x) =>
-            x.content ===
-            "run: npm run deploy"
-        )
-      ) {
-        return "You need to run 'npm run deploy'.";
-      }
-
-      return "The deployment step is structured incorrectly.";
-    }
-
-    return "The YAML structure is incorrect.";
+    return "The code content is present, but the YAML structure or indentation is incorrect.";
   }
 
-  /* ==========================================================
-     MEMORY TEST ERROR
-  ========================================================== */
+  /* ============================================================
+     ADVANCED LESSON → TEST
+  ============================================================ */
 
-  function getMemoryError(
-    submitted: string,
-    completedLevels: number
-  ): string {
-    const user =
-      parseYamlStructure(submitted);
+  function startAdvancedTest() {
+    setPhase("test");
 
-    if (user.length === 0) {
-      return "You submitted an empty pipeline.";
-    }
+    setResult(null);
+
+    setErrorMessage("");
 
     /*
-     * Level 1
-     */
-
-    if (
-      completedLevels >= 1 &&
-      !user.some(
-        (x) => x.content === "on:"
-      )
-    ) {
-      return "You forgot the workflow trigger from Level 1.";
-    }
-
-    /*
-     * Level 2
-     */
-
-    if (
-      completedLevels >= 2 &&
-      !user.some(
-        (x) => x.content === "jobs:"
-      )
-    ) {
-      return "You forgot the 'jobs:' section from Level 2.";
-    }
-
-    if (
-      completedLevels >= 2 &&
-      !user.some(
-        (x) => x.content === "build:"
-      )
-    ) {
-      return "You forgot the 'build' job from Level 2.";
-    }
-
-    if (
-      completedLevels >= 2 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "runs-on: ubuntu-latest"
-      )
-    ) {
-      return "You forgot 'runs-on: ubuntu-latest' from Level 2.";
-    }
-
-    if (
-      completedLevels >= 2 &&
-      !user.some(
-        (x) => x.content === "steps:"
-      )
-    ) {
-      return "You forgot 'steps:' from Level 2.";
-    }
-
-    /*
-     * Level 3
+     * IMPORTANT:
      *
-     * Notice that BOTH name and uses are
-     * required now.
+     * The existing code is automatically
+     * placed inside the editor.
+     *
+     * The player adds the new section.
      */
 
-    if (
-      completedLevels >= 3 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "- name: Checkout"
-      )
-    ) {
-      return "You forgot '- name: Checkout' from Level 3.";
-    }
+    const level =
+      advancedLevels[
+        currentLevel
+      ];
 
-    if (
-      completedLevels >= 3 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "uses: actions/checkout@v4"
-      )
-    ) {
-      return "You forgot 'uses: actions/checkout@v4' from Level 3.";
-    }
-
-    /*
-     * Level 4
-     */
-
-    if (
-      completedLevels >= 4 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "- name: Install dependencies"
-      )
-    ) {
-      return "You forgot the 'Install dependencies' step name from Level 4.";
-    }
-
-    if (
-      completedLevels >= 4 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "run: npm install"
-      )
-    ) {
-      return "You forgot 'run: npm install' from Level 4.";
-    }
-
-    /*
-     * Level 5
-     */
-
-    if (
-      completedLevels >= 5 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "- name: Build application"
-      )
-    ) {
-      return "You forgot the 'Build application' step name from Level 5.";
-    }
-
-    if (
-      completedLevels >= 5 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "run: npm run build"
-      )
-    ) {
-      return "You forgot 'run: npm run build' from Level 5.";
-    }
-
-    /*
-     * Level 6
-     */
-
-    if (
-      completedLevels >= 6 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "- name: Run tests"
-      )
-    ) {
-      return "You forgot the 'Run tests' step name from Level 6.";
-    }
-
-    if (
-      completedLevels >= 6 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "run: npm test"
-      )
-    ) {
-      return "You forgot 'run: npm test' from Level 6.";
-    }
-
-    /*
-     * Level 7
-     */
-
-    if (
-      completedLevels >= 7 &&
-      !user.some(
-        (x) =>
-          x.content === "deploy:"
-      )
-    ) {
-      return "You forgot the deploy job from Level 7.";
-    }
-
-    if (
-      completedLevels >= 7 &&
-      !user.some(
-        (x) =>
-          x.content === "needs: build"
-      )
-    ) {
-      return "You forgot 'needs: build' from Level 7.";
-    }
-
-    /*
-     * Level 8
-     */
-
-    if (
-      completedLevels >= 8 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "- name: Deploy application"
-      )
-    ) {
-      return "You forgot the 'Deploy application' step name from Level 8.";
-    }
-
-    if (
-      completedLevels >= 8 &&
-      !user.some(
-        (x) =>
-          x.content ===
-          "run: npm run deploy"
-      )
-    ) {
-      return "You forgot 'run: npm run deploy' from Level 8.";
-    }
-
-    return "The pipeline structure or indentation is incorrect.";
+    setCode(
+      level.codeAlreadyProvided
+    );
   }
 
-  /* ==========================================================
+  /* ============================================================
      CONTINUE AFTER FAILURE
-
-     As requested:
-     WRONG → SHOW TERMINAL → CONTINUE → LEVEL 1
-  ========================================================== */
+  ============================================================ */
 
   function continueAfterError() {
+    if (
+      mode === "advanced"
+    ) {
+      setCurrentLevel(0);
+
+      setPhase("lesson");
+
+      setCode("");
+
+      setResult(null);
+
+      setErrorMessage("");
+
+      return;
+    }
+
+    /*
+     * Basic mode:
+     * restart from Level 1.
+     */
+
     setCurrentLevel(0);
 
-    setPhase("lesson");
+    setPhase(
+      mode === "big-test"
+        ? "test"
+        : "lesson"
+    );
 
     setCode("");
 
@@ -997,42 +1361,29 @@ function App() {
     setErrorMessage("");
   }
 
-  /* ==========================================================
-     RESTART
-  ========================================================== */
-
-  function restartGame() {
-    setCurrentLevel(0);
-
-    setPhase("lesson");
-
-    setCode("");
-
-    setResult(null);
-
-    setErrorMessage("");
-
-    setCompleted(false);
-  }
-
-  /* ==========================================================
+  /* ============================================================
      TAB SUPPORT
-  ========================================================== */
+  ============================================================ */
 
   function handleEditorKeyDown(
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) {
-    if (event.key !== "Tab") {
+    if (
+      event.key !== "Tab"
+    ) {
       return;
     }
 
     event.preventDefault();
 
-    const textarea = event.currentTarget;
+    const textarea =
+      event.currentTarget;
 
-    const start = textarea.selectionStart;
+    const start =
+      textarea.selectionStart;
 
-    const end = textarea.selectionEnd;
+    const end =
+      textarea.selectionEnd;
 
     const newCode =
       code.substring(0, start) +
@@ -1050,9 +1401,92 @@ function App() {
     });
   }
 
-  /* ==========================================================
-     COMPLETION SCREEN
-  ========================================================== */
+  /* ============================================================
+     MENU
+  ============================================================ */
+
+  if (
+    mode === "menu"
+  ) {
+    return (
+      <div className="game">
+
+        <div className="game-card menu-card">
+
+          <div className="menu-content">
+
+            <div className="eyebrow">
+              CI/CD TRAINING
+            </div>
+
+            <h1>
+              Pipeline Builder
+            </h1>
+
+            <p className="menu-subtitle">
+              Choose how you want to train.
+            </p>
+
+            <div className="mode-grid">
+
+              <ModeCard
+                icon="📚"
+                title="Step by Step"
+                description="Learn one concept at a time, practice it, and periodically rebuild everything you've learned from memory."
+                onClick={
+                  startStepMode
+                }
+              />
+
+              <ModeCard
+                icon="🧠"
+                title="Big Test"
+                description="Skip the lessons and write the entire basic CI/CD pipeline from memory."
+                onClick={
+                  startBigTest
+                }
+              />
+
+              <ModeCard
+                icon="⚡"
+                title="Advanced"
+                description="The basic pipeline is already there. Practice real .NET, artifacts and Azure deployment syntax."
+                onClick={
+                  startAdvanced
+                }
+              />
+
+            </div>
+
+            <div className="menu-tip">
+
+              <span>
+                💡
+              </span>
+
+              <p>
+                <strong>
+                  Recommended:
+                </strong>{" "}
+                Start with Step by Step,
+                then use Big Test to check
+                what you remember, and finally
+                move on to Advanced.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  /* ============================================================
+     COMPLETED
+  ============================================================ */
 
   if (completed) {
     return (
@@ -1069,50 +1503,24 @@ function App() {
           </div>
 
           <h1>
-            CI/CD Pipeline Complete!
+            {mode === "advanced"
+              ? "Advanced Pipeline Complete!"
+              : "CI/CD Pipeline Complete!"}
           </h1>
 
           <p className="completion-description">
-            You successfully built the entire
-            pipeline and passed all memory tests.
+            {mode === "advanced"
+              ? "You successfully worked through the advanced .NET and Azure pipeline concepts."
+              : "You successfully built the entire pipeline and passed the test."}
           </p>
-
-          <div className="completed-levels">
-
-            {levels.map(
-              (level, index) => (
-                <div
-                  className="completed-level"
-                  key={level.title}
-                >
-
-                  <span className="completed-check">
-                    ✓
-                  </span>
-
-                  <div>
-
-                    <small>
-                      LEVEL {index + 1}
-                    </small>
-
-                    <strong>
-                      {level.title}
-                    </strong>
-
-                  </div>
-
-                </div>
-              )
-            )}
-
-          </div>
 
           <button
             className="primary-button"
-            onClick={restartGame}
+            onClick={
+              openMenu
+            }
           >
-            Start Again
+            Back to Menu
           </button>
 
         </div>
@@ -1121,15 +1529,623 @@ function App() {
     );
   }
 
-  /* ==========================================================
-     MAIN DISPLAY
-  ========================================================== */
+  /* ============================================================
+     ADVANCED MODE
+  ============================================================ */
 
-  const displayLevel =
-    phase === "memory"
-      ? currentLevel
-      : currentLevel + 1;
+  if (
+    mode === "advanced"
+  ) {
+    const level =
+      advancedLevels[
+        currentLevel
+      ];
 
+    return (
+      <>
+        <GameLayout
+          title="Advanced Pipeline"
+          level={
+            currentLevel + 1
+          }
+          total={
+            advancedLevels.length
+          }
+          onMenu={
+            openMenu
+          }
+        >
+
+          {phase === "lesson" && (
+            <section className="lesson">
+
+              <div className="advanced-badge">
+                ⚡ ADVANCED
+              </div>
+
+              <div className="step-label">
+                ADVANCED LEVEL{" "}
+                {currentLevel + 1}
+              </div>
+
+              <h2>
+                {level.title}
+              </h2>
+
+              <p className="description">
+                {level.description}
+              </p>
+
+              <div className="learn-box">
+
+                <div className="box-title">
+                  📖 WHAT YOU ALREADY HAVE
+                </div>
+
+                <div className="code-example">
+
+                  <div className="code-header">
+                    <span>
+                      ci.yml
+                    </span>
+
+                    <span>
+                      YAML
+                    </span>
+                  </div>
+
+                  <pre>
+                    {level.codeAlreadyProvided}
+                  </pre>
+
+                </div>
+
+                <div className="new-code-box">
+
+                  <div className="new-code-title">
+                    ⚡ ADD THIS
+                  </div>
+
+                  <pre>
+                    {level.targetCode}
+                  </pre>
+
+                </div>
+
+                <div className="explanation">
+
+                  <strong>
+                    What does it do?
+                  </strong>
+
+                  <p>
+                    {level.explanation}
+                  </p>
+
+                </div>
+
+              </div>
+
+              <button
+                className="primary-button understand-button"
+                onClick={
+                  startAdvancedTest
+                }
+              >
+                OK, I Understand →
+              </button>
+
+            </section>
+          )}
+
+          {phase === "test" && (
+            <section className="test">
+
+              <div className="advanced-badge">
+                ⚡ ADVANCED
+              </div>
+
+              <div className="step-label">
+                PRACTICE — LEVEL{" "}
+                {currentLevel + 1}
+              </div>
+
+              <h2>
+                Add the new code
+              </h2>
+
+              <p className="description">
+                The code you've already learned
+                is provided. Add the new section
+                you just learned.
+              </p>
+
+              <Editor
+                code={code}
+                setCode={setCode}
+                onKeyDown={
+                  handleEditorKeyDown
+                }
+                full
+                placeholder="Add the new YAML here..."
+              />
+
+              <button
+                className="primary-button check-button"
+                onClick={
+                  checkAdvanced
+                }
+                disabled={
+                  !code.trim()
+                }
+              >
+                ▶ Check Answer
+              </button>
+
+              {result ===
+                "correct" && (
+                <div className="feedback correct">
+
+                  <div className="feedback-icon">
+                    ✓
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      Correct!
+                    </strong>
+
+                    <p>
+                      Moving to the next
+                      advanced concept...
+                    </p>
+
+                  </div>
+
+                </div>
+              )}
+
+            </section>
+          )}
+
+        </GameLayout>
+
+        {result ===
+          "wrong" && (
+          <FailureTerminal
+            code={code}
+            expected={
+              level.fullExpectedCode
+            }
+            error={
+              errorMessage
+            }
+            onContinue={
+              continueAfterError
+            }
+          />
+        )}
+      </>
+    );
+  }
+
+  /* ============================================================
+     BIG TEST
+  ============================================================ */
+
+  if (
+    mode === "big-test"
+  ) {
+    return (
+      <>
+        <GameLayout
+          title="Big Test"
+          level={1}
+          total={1}
+          onMenu={
+            openMenu
+          }
+        >
+
+          <section className="full-test">
+
+            <div className="memory-test-banner">
+              🧠 FINAL BASIC TEST
+            </div>
+
+            <div className="step-label">
+              NO HINTS
+            </div>
+
+            <h2>
+              Build the entire pipeline
+            </h2>
+
+            <p className="description">
+              You skipped the lessons.
+              Now prove that you can write the
+              complete basic CI/CD pipeline from
+              memory.
+            </p>
+
+            <div className="memory-info">
+
+              <div>
+
+                <span>
+                  EXPECTED
+                </span>
+
+                <strong>
+                  COMPLETE PIPELINE
+                </strong>
+
+              </div>
+
+              <div>
+
+                <span>
+                  HINTS
+                </span>
+
+                <strong>
+                  NONE
+                </strong>
+
+              </div>
+
+            </div>
+
+            <Editor
+              code={code}
+              setCode={setCode}
+              onKeyDown={
+                handleEditorKeyDown
+              }
+              full
+              placeholder="Write the complete pipeline..."
+            />
+
+            <button
+              className="primary-button check-button"
+              onClick={
+                checkBigTest
+              }
+              disabled={
+                !code.trim()
+              }
+            >
+              🚀 Submit Pipeline
+            </button>
+
+          </section>
+
+        </GameLayout>
+
+        {result ===
+          "wrong" && (
+          <FailureTerminal
+            code={code}
+            expected={
+              getBasicPipeline()
+            }
+            error={
+              errorMessage
+            }
+            onContinue={
+              continueAfterError
+            }
+          />
+        )}
+      </>
+    );
+  }
+
+  /* ============================================================
+     STEP-BY-STEP
+  ============================================================ */
+
+  return (
+    <>
+      <GameLayout
+        title="Step by Step"
+        level={
+          phase === "memory"
+            ? currentLevel
+            : currentLevel + 1
+        }
+        total={
+          levels.length
+        }
+        onMenu={
+          openMenu
+        }
+      >
+
+        {phase ===
+          "lesson" && (
+          <section className="lesson">
+
+            <div className="step-label">
+              STEP{" "}
+              {currentLevel + 1}
+            </div>
+
+            <h2>
+              {
+                levels[
+                  currentLevel
+                ].title
+              }
+            </h2>
+
+            <p className="description">
+              {
+                levels[
+                  currentLevel
+                ].description
+              }
+            </p>
+
+            <div className="learn-box">
+
+              <div className="box-title">
+                📖 LEARN THIS
+              </div>
+
+              <p className="learn-description">
+                Study the code below.
+                You will need to reproduce
+                it yourself.
+              </p>
+
+              <div className="code-example">
+
+                <div className="code-header">
+
+                  <span>
+                    .github/workflows/ci.yml
+                  </span>
+
+                  <span>
+                    YAML
+                  </span>
+
+                </div>
+
+                <pre>
+                  {
+                    levels[
+                      currentLevel
+                    ].lessonCode
+                  }
+                </pre>
+
+              </div>
+
+              <div className="explanation">
+
+                <strong>
+                  What does it do?
+                </strong>
+
+                <p>
+                  {
+                    levels[
+                      currentLevel
+                    ].explanation
+                  }
+                </p>
+
+              </div>
+
+            </div>
+
+            <button
+              className="primary-button understand-button"
+              onClick={
+                startLevelTest
+              }
+            >
+              OK, I Understand →
+            </button>
+
+          </section>
+        )}
+
+        {phase ===
+          "test" && (
+          <section className="test">
+
+            <div className="step-label">
+              TEST — LEVEL{" "}
+              {currentLevel + 1}
+            </div>
+
+            <h2>
+              Now write it yourself
+            </h2>
+
+            <p className="description">
+              Without looking at the lesson,
+              write the YAML required for this
+              level.
+            </p>
+
+            <Editor
+              code={code}
+              setCode={setCode}
+              onKeyDown={
+                handleEditorKeyDown
+              }
+              placeholder="Write your YAML here..."
+            />
+
+            <button
+              className="primary-button check-button"
+              onClick={
+                checkBasicLevel
+              }
+              disabled={
+                !code.trim()
+              }
+            >
+              ▶ Check Answer
+            </button>
+
+            {result ===
+              "correct" && (
+              <div className="feedback correct">
+
+                <div className="feedback-icon">
+                  ✓
+                </div>
+
+                <div>
+
+                  <strong>
+                    Correct!
+                  </strong>
+
+                  <p>
+                    Loading the next stage...
+                  </p>
+
+                </div>
+
+              </div>
+            )}
+
+          </section>
+        )}
+
+        {phase ===
+          "memory" && (
+          <section className="full-test">
+
+            <div className="memory-test-banner">
+              🧠 MEMORY TEST
+            </div>
+
+            <div className="step-label">
+              REBUILD WHAT YOU KNOW
+            </div>
+
+            <h2>
+              Write the entire pipeline
+            </h2>
+
+            <p className="description">
+              You've completed{" "}
+              <strong>
+                {currentLevel}
+              </strong>{" "}
+              levels.
+
+              <br />
+
+              Rebuild everything you've learned
+              up to this point from memory.
+            </p>
+
+            <div className="memory-info">
+
+              <div>
+
+                <span>
+                  COMPLETED
+                </span>
+
+                <strong>
+                  LEVELS 1–{currentLevel}
+                </strong>
+
+              </div>
+
+              <div>
+
+                <span>
+                  REMEMBER
+                </span>
+
+                <strong>
+                  EVERYTHING SO FAR
+                </strong>
+
+              </div>
+
+            </div>
+
+            <Editor
+              code={code}
+              setCode={setCode}
+              onKeyDown={
+                handleEditorKeyDown
+              }
+              full
+              placeholder="Rebuild the pipeline from memory..."
+            />
+
+            <button
+              className="primary-button check-button"
+              onClick={
+                checkMemory
+              }
+              disabled={
+                !code.trim()
+              }
+            >
+              🚀 Submit Full Pipeline
+            </button>
+
+          </section>
+        )}
+
+      </GameLayout>
+
+      {result ===
+        "wrong" && (
+        <FailureTerminal
+          code={code}
+          expected={
+            phase === "memory"
+              ? getMemoryPipeline(
+                  currentLevel
+                )
+              : levels[
+                  currentLevel
+                ].solution
+          }
+          error={
+            errorMessage
+          }
+          onContinue={
+            continueAfterError
+          }
+        />
+      )}
+    </>
+  );
+}
+
+/* ============================================================
+   GAME LAYOUT
+============================================================ */
+
+function GameLayout({
+  children,
+  title,
+  level,
+  total,
+  onMenu,
+}: {
+  children: React.ReactNode;
+  title: string;
+  level: number;
+  total: number;
+  onMenu: () => void;
+}) {
   return (
     <div className="game">
 
@@ -1144,7 +2160,7 @@ function App() {
             </div>
 
             <h1>
-              Pipeline Builder
+              {title}
             </h1>
 
             <p>
@@ -1153,18 +2169,31 @@ function App() {
 
           </div>
 
-          <div className="level-counter">
+          <div className="header-right">
 
-            <span>
-              PROGRESS
-            </span>
+            <button
+              className="menu-button"
+              onClick={
+                onMenu
+              }
+            >
+              ☰ Menu
+            </button>
 
-            <strong>
-              {displayLevel}
-              <small>
-                /{levels.length}
-              </small>
-            </strong>
+            <div className="level-counter">
+
+              <span>
+                PROGRESS
+              </span>
+
+              <strong>
+                {level}
+                <small>
+                  /{total}
+                </small>
+              </strong>
+
+            </div>
 
           </div>
 
@@ -1176,258 +2205,18 @@ function App() {
             className="progress"
             style={{
               width:
-                `${(displayLevel / levels.length) * 100}%`,
+                `${Math.min(
+                  (level / total) *
+                    100,
+                  100
+                )}%`,
             }}
           />
 
         </div>
 
         <main>
-
-          {/* ==================================================
-              LESSON
-          ================================================== */}
-
-          {phase === "lesson" && (
-            <section className="lesson">
-
-              <div className="step-label">
-                STEP {currentLevel + 1}
-              </div>
-
-              <h2>
-                {levels[currentLevel].title}
-              </h2>
-
-              <p className="description">
-                {levels[currentLevel].description}
-              </p>
-
-              <div className="learn-box">
-
-                <div className="box-title">
-                  📖 LEARN THIS
-                </div>
-
-                <p className="learn-description">
-                  Study the code below. You will
-                  need to reproduce it yourself.
-                </p>
-
-                <div className="code-example">
-
-                  <div className="code-header">
-
-                    <span>
-                      .github/workflows/ci.yml
-                    </span>
-
-                    <span>
-                      YAML
-                    </span>
-
-                  </div>
-
-                  <pre>
-                    {levels[currentLevel].lessonCode}
-                  </pre>
-
-                </div>
-
-                <div className="explanation">
-
-                  <strong>
-                    What does it do?
-                  </strong>
-
-                  <p>
-                    {levels[currentLevel].explanation}
-                  </p>
-
-                </div>
-
-              </div>
-
-              <button
-                className="primary-button understand-button"
-                onClick={startLevelTest}
-              >
-                OK, I Understand →
-              </button>
-
-            </section>
-          )}
-
-          {/* ==================================================
-              INDIVIDUAL TEST
-          ================================================== */}
-
-          {phase === "test" && (
-            <section className="test">
-
-              <div className="step-label">
-                TEST — LEVEL {currentLevel + 1}
-              </div>
-
-              <h2>
-                Now write it yourself
-              </h2>
-
-              <p className="description">
-                Without looking at the lesson,
-                write the YAML required for this
-                level.
-              </p>
-
-              <Editor
-                code={code}
-                setCode={setCode}
-                onKeyDown={
-                  handleEditorKeyDown
-                }
-                placeholder="Write your YAML here..."
-              />
-
-              <button
-                className="primary-button check-button"
-                onClick={
-                  checkLevelAnswer
-                }
-                disabled={!code.trim()}
-              >
-                ▶ Check Answer
-              </button>
-
-              {result === "correct" && (
-                <div className="feedback correct">
-
-                  <div className="feedback-icon">
-                    ✓
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      Correct!
-                    </strong>
-
-                    <p>
-                      Loading the next stage...
-                    </p>
-
-                  </div>
-
-                </div>
-              )}
-
-            </section>
-          )}
-
-          {/* ==================================================
-              MEMORY TEST
-          ================================================== */}
-
-          {phase === "memory" && (
-            <section className="full-test">
-
-              <div className="memory-test-banner">
-                🧠 MEMORY TEST
-              </div>
-
-              <div className="step-label">
-                REBUILD WHAT YOU KNOW
-              </div>
-
-              <h2>
-                Write the entire pipeline
-              </h2>
-
-              <p className="description">
-                You've completed{" "}
-                <strong>
-                  {currentLevel}
-                </strong>{" "}
-                levels.
-
-                <br />
-
-                Rebuild everything you've learned
-                up to this point from memory.
-              </p>
-
-              <div className="memory-info">
-
-                <div>
-
-                  <span>
-                    COMPLETED
-                  </span>
-
-                  <strong>
-                    LEVELS 1–{currentLevel}
-                  </strong>
-
-                </div>
-
-                <div>
-
-                  <span>
-                    REMEMBER
-                  </span>
-
-                  <strong>
-                    EVERYTHING SO FAR
-                  </strong>
-
-                </div>
-
-              </div>
-
-              <Editor
-                code={code}
-                setCode={setCode}
-                onKeyDown={
-                  handleEditorKeyDown
-                }
-                full
-                placeholder="Rebuild the pipeline from memory..."
-              />
-
-              <button
-                className="primary-button check-button"
-                onClick={
-                  checkMemoryAnswer
-                }
-                disabled={!code.trim()}
-              >
-                🚀 Submit Full Pipeline
-              </button>
-
-              {result === "correct" && (
-                <div className="feedback correct">
-
-                  <div className="feedback-icon">
-                    ✓
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      Memory Test Passed!
-                    </strong>
-
-                    <p>
-                      You remembered everything.
-                    </p>
-
-                  </div>
-
-                </div>
-              )}
-
-            </section>
-          )}
-
+          {children}
         </main>
 
         <footer>
@@ -1437,139 +2226,59 @@ function App() {
           </span>
 
           <span>
-            Memory test every 2 levels
+            Use TAB for indentation
           </span>
 
         </footer>
 
       </div>
 
-      {/* ======================================================
-          FAILURE TERMINAL
-      ====================================================== */}
-
-      {result === "wrong" && (
-        <div className="modal-overlay">
-
-          <div className="terminal-window">
-
-            <div className="terminal-header">
-
-              <div className="terminal-buttons">
-
-                <span />
-                <span />
-                <span />
-
-              </div>
-
-              <div className="terminal-title">
-                pipeline-validator
-              </div>
-
-            </div>
-
-            <div className="terminal-content">
-
-              <div className="terminal-command">
-
-                <span className="terminal-green">
-                  user@pipeline
-                </span>
-
-                <span className="terminal-white">
-                  :~$
-                </span>{" "}
-                github-actions-validator
-                ci.yml
-
-              </div>
-
-              <div className="terminal-failed">
-                ✗ PIPELINE FAILED
-              </div>
-
-              <div className="terminal-message">
-                {errorMessage}
-              </div>
-
-              <div className="terminal-section">
-
-                <div className="terminal-section-title terminal-red">
-                  YOUR CODE
-                </div>
-
-                <TerminalCode
-                  code={code}
-                />
-
-              </div>
-
-              <div className="terminal-section">
-
-                <div className="terminal-section-title terminal-green-text">
-                  EXPECTED CODE
-                </div>
-
-                <TerminalCode
-                  code={
-                    phase === "memory"
-                      ? getPipelineForCompletedLevels(
-                          currentLevel
-                        )
-                      : levels[
-                          currentLevel
-                        ].solution
-                  }
-                />
-
-              </div>
-
-              <div className="terminal-error">
-
-                <span className="terminal-red">
-                  ERROR:
-                </span>
-
-                <span>
-                  {errorMessage}
-                </span>
-
-              </div>
-
-              <div className="terminal-prompt">
-
-                <span className="terminal-green">
-                  user@pipeline
-                </span>
-
-                <span className="terminal-white">
-                  :~$
-                </span>
-
-                <span className="terminal-cursor">
-                  _
-                </span>
-
-              </div>
-
-              <button
-                className="terminal-continue"
-                onClick={
-                  continueAfterError
-                }
-              >
-                CONTINUE — RESTART FROM LEVEL 1
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
     </div>
+  );
+}
+
+/* ============================================================
+   MODE CARD
+============================================================ */
+
+function ModeCard({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="mode-card"
+      onClick={onClick}
+    >
+
+      <div className="mode-icon">
+        {icon}
+      </div>
+
+      <div className="mode-card-content">
+
+        <h2>
+          {title}
+        </h2>
+
+        <p>
+          {description}
+        </p>
+
+      </div>
+
+      <span className="mode-arrow">
+        →
+      </span>
+
+    </button>
   );
 }
 
@@ -1577,7 +2286,13 @@ function App() {
    EDITOR
 ============================================================ */
 
-type EditorProps = {
+function Editor({
+  code,
+  setCode,
+  onKeyDown,
+  placeholder,
+  full = false,
+}: {
   code: string;
   setCode: (value: string) => void;
   onKeyDown: (
@@ -1585,19 +2300,12 @@ type EditorProps = {
   ) => void;
   placeholder: string;
   full?: boolean;
-};
-
-function Editor({
-  code,
-  setCode,
-  onKeyDown,
-  placeholder,
-  full = false,
-}: EditorProps) {
-  const lineCount = Math.max(
-    code.split("\n").length,
-    1
-  );
+}) {
+  const lineCount =
+    Math.max(
+      code.split("\n").length,
+      1
+    );
 
   return (
     <div className="editor">
@@ -1633,7 +2341,9 @@ function Editor({
               length: lineCount,
             },
             (_, index) => (
-              <div key={index}>
+              <div
+                key={index}
+              >
                 {index + 1}
               </div>
             )
@@ -1649,9 +2359,13 @@ function Editor({
               event.target.value
             )
           }
-          onKeyDown={onKeyDown}
+          onKeyDown={
+            onKeyDown
+          }
           spellCheck={false}
-          placeholder={placeholder}
+          placeholder={
+            placeholder
+          }
         />
 
       </div>
@@ -1673,6 +2387,135 @@ function Editor({
 }
 
 /* ============================================================
+   FAILURE TERMINAL
+============================================================ */
+
+function FailureTerminal({
+  code,
+  expected,
+  error,
+  onContinue,
+}: {
+  code: string;
+  expected: string;
+  error: string;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="modal-overlay">
+
+      <div className="terminal-window">
+
+        <div className="terminal-header">
+
+          <div className="terminal-buttons">
+
+            <span />
+            <span />
+            <span />
+
+          </div>
+
+          <div className="terminal-title">
+            pipeline-validator
+          </div>
+
+        </div>
+
+        <div className="terminal-content">
+
+          <div className="terminal-command">
+
+            <span className="terminal-green">
+              user@pipeline
+            </span>
+
+            <span className="terminal-white">
+              :~$
+            </span>{" "}
+            github-actions-validator
+            ci.yml
+
+          </div>
+
+          <div className="terminal-failed">
+            ✗ PIPELINE FAILED
+          </div>
+
+          <div className="terminal-message">
+            {error}
+          </div>
+
+          <div className="terminal-section">
+
+            <div className="terminal-section-title terminal-red">
+              YOUR CODE
+            </div>
+
+            <TerminalCode
+              code={code}
+            />
+
+          </div>
+
+          <div className="terminal-section">
+
+            <div className="terminal-section-title terminal-green-text">
+              EXPECTED CODE
+            </div>
+
+            <TerminalCode
+              code={expected}
+            />
+
+          </div>
+
+          <div className="terminal-error">
+
+            <span className="terminal-red">
+              ERROR:
+            </span>
+
+            <span>
+              {error}
+            </span>
+
+          </div>
+
+          <div className="terminal-prompt">
+
+            <span className="terminal-green">
+              user@pipeline
+            </span>
+
+            <span className="terminal-white">
+              :~$
+            </span>
+
+            <span className="terminal-cursor">
+              _
+            </span>
+
+          </div>
+
+          <button
+            className="terminal-continue"
+            onClick={
+              onContinue
+            }
+          >
+            CONTINUE
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* ============================================================
    TERMINAL CODE
 ============================================================ */
 
@@ -1684,34 +2527,41 @@ function TerminalCode({
   return (
     <div className="terminal-code">
 
-      {code ? (
-        code
-          .split("\n")
-          .map(
-            (line, index) => (
-              <div
-                className="terminal-line"
-                key={index}
-              >
+      {code
+        ? code
+            .split("\n")
+            .map(
+              (
+                line,
+                index
+              ) => (
+                <div
+                  className="terminal-line"
+                  key={index}
+                >
 
-                <span className="terminal-line-number">
-                  {String(
-                    index + 1
-                  ).padStart(2, "0")}
-                </span>
+                  <span className="terminal-line-number">
+                    {String(
+                      index + 1
+                    ).padStart(
+                      2,
+                      "0"
+                    )}
+                  </span>
 
-                <span>
-                  {line || " "}
-                </span>
+                  <span>
+                    {line ||
+                      " "}
+                  </span>
 
-              </div>
+                </div>
+              )
             )
-          )
-      ) : (
-        <div className="terminal-empty">
-          [no code submitted]
-        </div>
-      )}
+        : (
+          <div className="terminal-empty">
+            [no code submitted]
+          </div>
+        )}
 
     </div>
   );
