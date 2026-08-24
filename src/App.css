@@ -1,0 +1,1035 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #080b10;
+  color: #e6edf3;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button,
+textarea {
+  font-family: inherit;
+}
+
+/* ============================================================
+   GAME
+============================================================ */
+
+.game {
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 40px 20px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      #182436 0%,
+      #080b10 55%
+    );
+}
+
+.game-card {
+  width: 100%;
+  max-width: 1050px;
+
+  background: #11161d;
+
+  border: 1px solid #303844;
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.header {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 30px 35px 25px;
+}
+
+.eyebrow {
+  color: #58a6ff;
+
+  font-family: monospace;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 2px;
+
+  margin-bottom: 8px;
+}
+
+.header h1 {
+  margin: 0;
+
+  font-size: 30px;
+  letter-spacing: -0.5px;
+}
+
+.header p {
+  margin: 7px 0 0;
+
+  color: #8b949e;
+}
+
+.level-counter {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  min-width: 85px;
+
+  padding: 10px 14px;
+
+  background: #1b222c;
+
+  border: 1px solid #303844;
+
+  border-radius: 10px;
+}
+
+.level-counter span {
+  color: #6e7681;
+
+  font-family: monospace;
+
+  font-size: 9px;
+
+  letter-spacing: 1px;
+}
+
+.level-counter strong {
+  color: #58a6ff;
+
+  font-family: monospace;
+
+  font-size: 22px;
+}
+
+.level-counter small {
+  color: #6e7681;
+
+  font-size: 13px;
+}
+
+/* ============================================================
+   PROGRESS
+============================================================ */
+
+.progress-container {
+  width: 100%;
+  height: 5px;
+
+  background: #202731;
+}
+
+.progress {
+  height: 100%;
+
+  background: #238636;
+
+  transition: width 0.4s ease;
+}
+
+/* ============================================================
+   MAIN
+============================================================ */
+
+main {
+  padding: 35px;
+}
+
+.step-label {
+  color: #58a6ff;
+
+  font-family: monospace;
+
+  font-size: 12px;
+  font-weight: bold;
+
+  letter-spacing: 1px;
+
+  margin-bottom: 9px;
+}
+
+.lesson h2,
+.test h2,
+.full-test h2 {
+  margin: 0;
+
+  font-size: 26px;
+}
+
+.description {
+  max-width: 850px;
+
+  color: #b6bec8;
+
+  line-height: 1.7;
+
+  margin: 12px 0 28px;
+}
+
+/* ============================================================
+   LESSON
+============================================================ */
+
+.learn-box {
+  padding: 24px;
+
+  background: #0d1117;
+
+  border: 1px solid #303844;
+
+  border-radius: 10px;
+}
+
+.box-title {
+  color: #58a6ff;
+
+  font-family: monospace;
+
+  font-size: 12px;
+  font-weight: bold;
+
+  margin-bottom: 10px;
+}
+
+.learn-description {
+  color: #8b949e;
+
+  margin-top: 0;
+}
+
+.code-example {
+  margin-top: 20px;
+
+  border: 1px solid #303844;
+
+  border-radius: 8px;
+
+  overflow: hidden;
+
+  background: #080b10;
+}
+
+.code-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  padding: 10px 14px;
+
+  background: #191f27;
+
+  border-bottom: 1px solid #303844;
+
+  color: #6e7681;
+
+  font-family: monospace;
+
+  font-size: 11px;
+}
+
+.code-example pre {
+  margin: 0;
+
+  padding: 22px;
+
+  color: #79c0ff;
+
+  font-family:
+    Consolas,
+    Monaco,
+    monospace;
+
+  font-size: 15px;
+
+  line-height: 1.7;
+
+  white-space: pre-wrap;
+}
+
+.explanation {
+  margin-top: 20px;
+
+  padding: 16px;
+
+  background: rgba(88, 166, 255, 0.06);
+
+  border-left: 3px solid #58a6ff;
+
+  border-radius: 4px;
+}
+
+.explanation strong {
+  color: #e6edf3;
+}
+
+.explanation p {
+  color: #aab3bd;
+
+  line-height: 1.6;
+
+  margin: 6px 0 0;
+}
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+
+.primary-button {
+  border: none;
+
+  padding: 12px 22px;
+
+  background: #238636;
+
+  color: white;
+
+  border-radius: 7px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #2ea043;
+
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.4;
+
+  cursor: not-allowed;
+}
+
+.understand-button {
+  margin-top: 25px;
+
+  font-size: 15px;
+}
+
+/* ============================================================
+   EDITOR
+============================================================ */
+
+.editor {
+  margin-top: 25px;
+
+  border: 1px solid #303844;
+
+  border-radius: 9px;
+
+  overflow: hidden;
+
+  background: #0d1117;
+}
+
+.editor-top {
+  height: 42px;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  position: relative;
+
+  background: #191f27;
+
+  border-bottom: 1px solid #303844;
+
+  color: #8b949e;
+
+  font-family: monospace;
+
+  font-size: 12px;
+}
+
+.window-buttons {
+  position: absolute;
+
+  left: 14px;
+
+  display: flex;
+
+  gap: 7px;
+}
+
+.window-buttons span {
+  width: 11px;
+  height: 11px;
+
+  border-radius: 50%;
+
+  background: #484f58;
+}
+
+.editor-body {
+  display: flex;
+
+  min-height: 270px;
+}
+
+.full-editor {
+  min-height: 420px;
+}
+
+.line-numbers {
+  width: 50px;
+
+  padding-top: 18px;
+  padding-right: 13px;
+
+  background: #0a0d12;
+
+  border-right: 1px solid #202731;
+
+  color: #484f58;
+
+  font-family: Consolas, monospace;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+
+  text-align: right;
+
+  user-select: none;
+}
+
+.editor textarea {
+  flex: 1;
+
+  min-height: 270px;
+
+  resize: vertical;
+
+  border: none;
+  outline: none;
+
+  background: #0d1117;
+
+  color: #79c0ff;
+
+  padding: 18px;
+
+  font-family:
+    Consolas,
+    Monaco,
+    monospace;
+
+  font-size: 15px;
+
+  line-height: 1.6;
+
+  tab-size: 2;
+}
+
+.full-editor textarea {
+  min-height: 420px;
+}
+
+.editor textarea::placeholder {
+  color: #484f58;
+}
+
+.editor-bottom {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  height: 28px;
+
+  padding: 0 12px;
+
+  background: #191f27;
+
+  border-top: 1px solid #303844;
+
+  color: #6e7681;
+
+  font-family: monospace;
+
+  font-size: 10px;
+}
+
+/* ============================================================
+   MEMORY TEST
+============================================================ */
+
+.memory-test-banner {
+  display: inline-block;
+
+  padding: 7px 12px;
+
+  margin-bottom: 12px;
+
+  background: rgba(210, 153, 34, 0.12);
+
+  border: 1px solid rgba(210, 153, 34, 0.4);
+
+  border-radius: 6px;
+
+  color: #d29922;
+
+  font-family: monospace;
+
+  font-size: 11px;
+
+  font-weight: bold;
+
+  letter-spacing: 1px;
+}
+
+.memory-info {
+  display: flex;
+
+  gap: 15px;
+
+  margin-top: 25px;
+  margin-bottom: 5px;
+}
+
+.memory-info div {
+  flex: 1;
+
+  padding: 15px;
+
+  background: #0d1117;
+
+  border: 1px solid #303844;
+
+  border-radius: 8px;
+}
+
+.memory-info span {
+  display: block;
+
+  color: #6e7681;
+
+  font-family: monospace;
+
+  font-size: 9px;
+
+  letter-spacing: 1px;
+
+  margin-bottom: 6px;
+}
+
+.memory-info strong {
+  color: #58a6ff;
+
+  font-family: monospace;
+
+  font-size: 16px;
+}
+
+/* ============================================================
+   SUCCESS
+============================================================ */
+
+.feedback {
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  margin-top: 18px;
+
+  padding: 16px;
+
+  background: rgba(35, 134, 54, 0.1);
+
+  border: 1px solid #238636;
+
+  border-radius: 8px;
+}
+
+.feedback-icon {
+  color: #3fb950;
+
+  font-size: 25px;
+
+  font-weight: bold;
+}
+
+.feedback p {
+  margin: 5px 0 0;
+
+  color: #8b949e;
+}
+
+/* ============================================================
+   TERMINAL
+============================================================ */
+
+.modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.86);
+
+  backdrop-filter: blur(5px);
+}
+
+.terminal-window {
+  width: 100%;
+
+  max-width: 900px;
+
+  max-height: 90vh;
+
+  overflow: hidden;
+
+  border: 1px solid #30363d;
+
+  border-radius: 9px;
+
+  background: #0d1117;
+
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.8);
+
+  font-family:
+    "Cascadia Code",
+    "Fira Code",
+    Consolas,
+    monospace;
+}
+
+.terminal-header {
+  height: 42px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+
+  background: #161b22;
+
+  border-bottom: 1px solid #30363d;
+}
+
+.terminal-buttons {
+  position: absolute;
+
+  left: 15px;
+
+  display: flex;
+
+  gap: 7px;
+}
+
+.terminal-buttons span {
+  width: 12px;
+  height: 12px;
+
+  border-radius: 50%;
+
+  background: #484f58;
+}
+
+.terminal-title {
+  color: #8b949e;
+
+  font-size: 12px;
+}
+
+.terminal-content {
+  padding: 25px;
+
+  max-height: calc(90vh - 42px);
+
+  overflow-y: auto;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+.terminal-command {
+  margin-bottom: 18px;
+
+  color: #e6edf3;
+}
+
+.terminal-green {
+  color: #3fb950;
+}
+
+.terminal-green-text {
+  color: #3fb950;
+}
+
+.terminal-white {
+  color: #e6edf3;
+}
+
+.terminal-red {
+  color: #f85149;
+}
+
+.terminal-failed {
+  margin-bottom: 15px;
+
+  color: #f85149;
+
+  font-weight: bold;
+
+  font-size: 15px;
+}
+
+.terminal-message {
+  margin-bottom: 25px;
+
+  padding: 12px 15px;
+
+  color: #c9d1d9;
+
+  background: #161b22;
+
+  border-left: 3px solid #f85149;
+
+  white-space: pre-line;
+}
+
+.terminal-section {
+  margin-bottom: 22px;
+
+  border: 1px solid #30363d;
+
+  border-radius: 5px;
+
+  overflow: hidden;
+}
+
+.terminal-section-title {
+  padding: 8px 12px;
+
+  background: #161b22;
+
+  border-bottom: 1px solid #30363d;
+
+  font-size: 11px;
+
+  font-weight: bold;
+
+  letter-spacing: 1px;
+}
+
+.terminal-code {
+  padding: 12px 0;
+
+  background: #080b10;
+
+  overflow-x: auto;
+}
+
+.terminal-line {
+  display: flex;
+
+  min-height: 22px;
+
+  padding-right: 15px;
+
+  white-space: pre;
+}
+
+.terminal-line:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.terminal-line-number {
+  width: 42px;
+
+  flex-shrink: 0;
+
+  margin-right: 14px;
+
+  color: #484f58;
+
+  text-align: right;
+
+  user-select: none;
+}
+
+.terminal-empty {
+  padding: 5px 15px;
+
+  color: #6e7681;
+
+  font-style: italic;
+}
+
+.terminal-error {
+  display: flex;
+
+  gap: 10px;
+
+  padding: 14px;
+
+  margin-top: 5px;
+  margin-bottom: 20px;
+
+  background: rgba(248, 81, 73, 0.07);
+
+  border: 1px solid rgba(248, 81, 73, 0.25);
+
+  border-radius: 5px;
+
+  color: #c9d1d9;
+
+  white-space: pre-line;
+}
+
+.terminal-prompt {
+  margin-bottom: 20px;
+}
+
+.terminal-cursor {
+  margin-left: 5px;
+
+  color: #3fb950;
+
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.terminal-continue {
+  width: 100%;
+
+  padding: 12px;
+
+  border: 1px solid #238636;
+
+  border-radius: 5px;
+
+  background: #238636;
+
+  color: white;
+
+  font-family: monospace;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.terminal-continue:hover {
+  background: #2ea043;
+
+  border-color: #2ea043;
+}
+
+/* ============================================================
+   COMPLETION
+============================================================ */
+
+.completion-card {
+  text-align: center;
+
+  padding: 55px 40px;
+}
+
+.completion-icon {
+  font-size: 60px;
+
+  margin-bottom: 15px;
+}
+
+.completion-card h1 {
+  margin: 0;
+
+  font-size: 36px;
+}
+
+.completion-description {
+  color: #8b949e;
+
+  margin: 10px 0 30px;
+}
+
+.completed-levels {
+  max-width: 550px;
+
+  margin: 0 auto 30px;
+
+  text-align: left;
+}
+
+.completed-level {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 12px 15px;
+
+  border-bottom: 1px solid #303844;
+}
+
+.completed-check {
+  color: #3fb950;
+
+  font-size: 18px;
+
+  font-weight: bold;
+}
+
+.completed-level small {
+  display: block;
+
+  color: #6e7681;
+
+  font-family: monospace;
+
+  font-size: 9px;
+}
+
+.completed-level strong {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 14px;
+}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+footer {
+  display: flex;
+
+  justify-content: space-between;
+
+  padding: 18px 35px;
+
+  background: #0d1117;
+
+  border-top: 1px solid #303844;
+
+  color: #6e7681;
+
+  font-size: 12px;
+}
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media (max-width: 700px) {
+  .game {
+    padding: 10px;
+  }
+
+  .header {
+    padding: 22px;
+
+    gap: 15px;
+  }
+
+  .header h1 {
+    font-size: 23px;
+  }
+
+  main {
+    padding: 22px;
+  }
+
+  .lesson h2,
+  .test h2,
+  .full-test h2 {
+    font-size: 22px;
+  }
+
+  .learn-box {
+    padding: 18px;
+  }
+
+  .code-example pre {
+    font-size: 13px;
+  }
+
+  .editor textarea {
+    font-size: 13px;
+  }
+
+  .memory-info {
+    flex-direction: column;
+  }
+
+  footer {
+    padding: 15px 22px;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .terminal-content {
+    padding: 18px;
+
+    font-size: 12px;
+  }
+
+  .terminal-window {
+    max-height: 95vh;
+  }
+
+  .completion-card {
+    padding: 35px 20px;
+  }
+}
